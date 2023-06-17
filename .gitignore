@@ -1,0 +1,14 @@
+contracts/.placeholder
+project/artifacts
+platform/artifacts
+@openzeppelin/contracts/proxy/artifacts
+@openzeppelin/contracts/utils/introspection/artifacts
+test/.placeholder
+CommonGood.iml
+package-lock.json
+remix-slither-report.json
+remix-compiler.config.js
+build
+node_modules
+.idea
+.deps
