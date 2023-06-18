@@ -105,6 +105,8 @@ contract("SoundworkMarketplace", (accounts_) => {
 
      await verifyCannotBidOnAuctionIfMarketplaceNotApproved(assetInd, PURCHASE_VALUE);
 
+     await verifyCannotCompleteAuctionBeforeTime(assetInd);
+
      // now approve marketplace for all of owner's asssets:
      const MARKETPLACE_ADDRESS = instance.address;
      await instance.setApprovalForAll( MARKETPLACE_ADDRESS, true, {from: ASSET_OWNER});
@@ -112,6 +114,7 @@ contract("SoundworkMarketplace", (accounts_) => {
      // and place bid on auction:
      await instance.placeBidForAssetInAuction(assetInd, { from: addr2, value: PURCHASE_VALUE});
 
+     await verifyCannotCompleteAuctionBeforeTime(assetInd);
   }); 
 
 
@@ -122,6 +125,15 @@ contract("SoundworkMarketplace", (accounts_) => {
      try { 
           await instance.purchaseAsset(assetInd, { from: addr2, value: enoughPrice});
           assert.fail( "cannot buy unless marketplace is approved by asset owner");
+     } catch(err) {
+          // should fail!
+     }
+  }
+
+  async function verifyCannotCompleteAuctionBeforeTime(assetInd) {
+     try { 
+          await instance.completeAuction(assetInd, { from: addr2});
+          assert.fail( "should not be able to complete auction before time");
      } catch(err) {
           // should fail!
      }
