@@ -160,7 +160,7 @@ contract SoundworkMarketplace is ERC1155, Ownable {
     }
 
     modifier isCurrentNftOwner(uint assetId_) {
-        require( _isCurrentNftOwner( msg.sender, assetId_), "not current asset owner");
+        require( _isCurrentNftOwner( msg.sender, assetId_), "not current asset owner/1");
         _;
     }
 
@@ -192,11 +192,13 @@ contract SoundworkMarketplace is ERC1155, Ownable {
     function createSoundAsset( SoundAsset memory asset) external onlyOwner {
         address assetOwner_ = _verifyNotNull( asset.authorAddress);
 
-        uint id_ = _mintAssetNft( assetOwner_);
+        uint assetId_ = _mintAssetNft( assetOwner_);
 
-        soundAssets[ id_] = asset;
+        soundAssets[ assetId_] = asset;
 
-        emit SoundAssetCreated(id_, assetOwner_);
+        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/4");
+
+        emit SoundAssetCreated(assetId_, assetOwner_);
     }
 
 
@@ -312,7 +314,7 @@ contract SoundworkMarketplace is ERC1155, Ownable {
         uint lastBiddingPrice_ = assetsInAuction[ assetId_].lastBiddingPrice;
         address assetOwner_ = assetsInAuction[ assetId_].origOwner;
 
-        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner");
+        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/2");
 
         delete assetsInAuction[ assetId_];
 
@@ -335,9 +337,12 @@ contract SoundworkMarketplace is ERC1155, Ownable {
     }
 
     function _mintAssetNft( address assetOwner_) private returns(uint) {
-        uint id_ = ++nextTokenId;
-        _mint( assetOwner_, id_, 1, "");
-        return id_;
+        uint assetId_ = ++nextTokenId;
+        _mint( assetOwner_, assetId_, 1, "");
+        
+        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/3");
+        
+        return assetId_;
     }
 
     function _valueIsSufficientForAuction( uint assetId_) private view returns(bool) {
