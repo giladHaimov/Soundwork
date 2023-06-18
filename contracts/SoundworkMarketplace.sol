@@ -21,6 +21,10 @@ contract SoundworkMarketplace is ERC1155, Ownable {
 
     mapping(uint => PackAsset) public packAssets;
 
+    mapping(uint => ElementAsset) public elementAssets;
+
+    mapping(uint => TrackAsset) public trackAssets;
+
 
 
     mapping(uint => SaleParams) public assetsForSale;
@@ -33,6 +37,10 @@ contract SoundworkMarketplace is ERC1155, Ownable {
     event MarketplaceCutChanged(uint oldVal, uint newVal);
 
     event SoundAssetCreated(uint indexed assetId, address indexed assetOwner);
+
+    event ElementAssetCreated(uint indexed assetId, address indexed assetOwner);
+
+    event TrackAssetCreated(uint indexed assetId, address indexed assetOwner);
 
     event PackAssetCreated(uint indexed assetId, address indexed assetOwner);
 
@@ -47,6 +55,8 @@ contract SoundworkMarketplace is ERC1155, Ownable {
     event AssetInAuctionHasBeenCompleted( uint indexed assetId, address indexed origAssetOwner, address indexed newAssetOwner, uint lastBiddingPrice);
 
     event AssetInAuctionHasBeenClosedWithNoBidders( uint indexed assetId);
+
+    event NewAssetCreated(uint indexed assetId, AssetType indexed assetType, address indexed assetOwner);
 
     //---------
 
@@ -102,6 +112,70 @@ contract SoundworkMarketplace is ERC1155, Ownable {
         */
     }
 
+    struct ElementAsset {         
+        // ●	Name: The title of the music piece, sound, sample, or loop.
+        string name;
+        // ●	Type:	MIDI | VST |  PRESET | TEMPLATE | OTHER
+        string assetType;
+        // ●	Media Files: The actual element files or links to the hosted files.
+        string mediaFiles;
+        // ●	Description: A brief description of the music asset.
+        string description;
+        // ●	Author Name: The creator's name or pseudonym.
+        string authorName;
+        // ●	Author Address: The blockchain address of the creator.
+        address authorAddress;
+        // ●	Collaborators: An array of blockchain addresses representing collaborators, if any, and the percentage of the Revenue each collaborator should receive.
+        address[] collaborators;
+        // ●	Units available: The number of available units/copies for sale or distribution.
+        uint256 unitsAvailable;
+        // ●	Maximum Supply: The maximum possible supply of the NFT, if there's a limit.
+        uint256 totalPossibleSupply;
+        // ●	Date Created: The creation date of the music asset.
+        uint256 dateCreated;
+        // ●	License: An NFT address representing the license type and its terms for the sample pack.
+        address licenseNFTAddress;
+    }
+
+    struct TrackAsset { 
+        // ●	Name: The title of the music piece, sound, sample, or loop.
+        string name;
+        // ●	Format: The file format of the music asset (e.g., WAV, MP3, MIDI).
+        string format;
+        // ●	Media Files: The Final music file / link to the hosted file.
+        string mediaFiles;
+        // ●	Sounds: a Collection / Array of SOUND NFTs used in the track
+        uint[] soundIds;
+        // ●	Elements: a Collection / Array of ELEMENT NFTs used in the track
+        uint[] elementIds;
+        // ●	Tempo: The beats per minute (BPM) of the music piece, if applicable.
+        uint256 tempo;
+        // ●	Genre: The musical genre or style of the asset.
+        string genre;
+        // ●	Style: A more specific description of the style, if applicable.
+        string style;
+        // ●	Description: A brief description of the music asset.
+        string description;
+        // ●	Author Name: The creator's name or pseudonym.
+        string authorName;
+        // ●	Author Address: The blockchain address of the creator.
+        address authorAddress;
+        // ●	Collaborators: An array of blockchain addresses representing collaborators, if any, and the percentage of the Revenue each collaborator should receive.
+        address[] collaborators;
+
+        //zzzzz Stack too deep
+        /*
+        // ●	Units available: The number of available units/copies for sale or distribution.
+        uint256 unitsAvailable;
+        // ●	Maximum Supply: The maximum possible supply of the NFT, if there's a limit.
+        uint256 totalPossibleSupply;
+        // ●	Date Created: The creation date of the music asset.
+        uint256 dateCreated;
+        // ●	License: An NFT address representing the license type and its terms for the music asset.
+        address licenseNFTAddress;
+        */
+    }
+
 
     struct PackAsset {
         //●	Name: The title of the music piece, sound, sample, or loop.
@@ -115,7 +189,7 @@ contract SoundworkMarketplace is ERC1155, Ownable {
         //●	Description: A brief description of the music asset.
         string description;
         //●	Author Address: The blockchain address of the creator.
-        address authorAddress;
+        address authorAddress;        
         //●	Author Name: The creator's name or pseudonym.
         string authorName;
         //●	Collaborators: An array of blockchain addresses representing collaborators, if any, and the percentage of the Revenue each collaborator should receive.
@@ -192,7 +266,7 @@ contract SoundworkMarketplace is ERC1155, Ownable {
     function createSoundAsset( SoundAsset memory asset) external onlyOwner {
         address assetOwner_ = _verifyNotNull( asset.authorAddress);
 
-        uint assetId_ = _mintAssetNft( assetOwner_);
+        uint assetId_ = _mintAssetNft( assetOwner_, AssetType.Sound);
 
         soundAssets[ assetId_] = asset;
 
@@ -201,11 +275,34 @@ contract SoundworkMarketplace is ERC1155, Ownable {
         emit SoundAssetCreated(assetId_, assetOwner_);
     }
 
+    function createElementAsset( ElementAsset memory asset) external onlyOwner {
+        address assetOwner_ = _verifyNotNull( asset.authorAddress);
+
+        uint assetId_ = _mintAssetNft( assetOwner_, AssetType.Element);
+
+        elementAssets[ assetId_] = asset;
+
+        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/6");
+
+        emit ElementAssetCreated(assetId_, assetOwner_);
+    }
+
+    function createTrackAsset( TrackAsset memory asset) external onlyOwner {
+        address assetOwner_ = _verifyNotNull( asset.authorAddress);
+
+        uint assetId_ = _mintAssetNft( assetOwner_, AssetType.Track);
+
+        trackAssets[ assetId_] = asset;
+
+        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/7");
+
+        emit TrackAssetCreated(assetId_, assetOwner_);
+    }
 
     function createPackAsset( PackAsset memory asset) external onlyOwner {
         address assetOwner_ = _verifyNotNull( asset.authorAddress);
 
-        uint id_ = _mintAssetNft( assetOwner_);
+        uint id_ = _mintAssetNft( assetOwner_, AssetType.Pack);
 
         packAssets[ id_] = asset;
 
@@ -336,11 +433,13 @@ contract SoundworkMarketplace is ERC1155, Ownable {
         return addr_;
     }
 
-    function _mintAssetNft( address assetOwner_) private returns(uint) {
+    function _mintAssetNft( address assetOwner_, AssetType type_) private returns(uint) {
         uint assetId_ = ++nextTokenId;
         _mint( assetOwner_, assetId_, 1, "");
         
         require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/3");
+
+        emit NewAssetCreated(assetId_, type_, assetOwner_);
         
         return assetId_;
     }

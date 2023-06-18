@@ -85,7 +85,10 @@ contract("SoundworkMarketplace", (accounts_) => {
      // and purchase:
      await instance.purchaseAsset(assetInd, { from: addr2, value: PURCHASE_VALUE});
 
-  });
+  }); 
+
+  //-----------
+
 
   async function verifyCannotPurchaseIfMarketplaceNotApproved(assetInd, enoughPrice) {
      try { 
@@ -130,6 +133,7 @@ contract("SoundworkMarketplace", (accounts_) => {
      const CONTRACT_OWNER = addr1;
      await instance.createSoundAsset( soundAsset, {from: CONTRACT_OWNER});
      const assetInd = 2;
+
      let assetRecord = await instance.soundAssets(assetInd);
      assert.equal( assetRecord.name, SOUND_ASSET_NAME);
      console.log(`assetRecord: ${assetRecord.name}`);
