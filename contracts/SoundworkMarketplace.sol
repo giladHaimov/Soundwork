@@ -79,7 +79,10 @@ contract SoundworkMarketplace is ERC1155, Ownable {
         string signature;
         //●	Author Address: The blockchain address of the creator.
         address authorAddress;
-        /* zzzz
+
+
+        /* zzzz: comment out to solve CompilerError: Stack too deep. Try compiling with `--via-ir` (cli) 
+        
         //●	Description: A brief description of the music asset.
         string description;
         //●	Author Name: The creator's name or pseudonym.
@@ -216,6 +219,7 @@ contract SoundworkMarketplace is ERC1155, Ownable {
         require( !_auctionHasBidders(assetId_), "existing auction deposits");
         require( _isNftAsset(assetId_), "not an NFT asset");
         require( requstedPrice_ > 0, "no price was set");
+
         assetsForSale[ assetId_] =  SaleParams({
                                         origOwner: msg.sender,
                                         requestedPrice: requstedPrice_,
@@ -234,7 +238,7 @@ contract SoundworkMarketplace is ERC1155, Ownable {
 
         require( _valueIsSufficientForSale(assetId_), "insufficient Eth value");
         require( _marketplaceIsApprovedByOwner(origOwner_), "marketplace not approved for asset");
-        require( block.timestamp <= assetsForSale[ assetId_].endDate, "after endDate");
+        require( !_saleHasEnded(assetId_), "sale had ended");
 
         uint requestedPrice_ = assetsForSale[ assetId_].requestedPrice;
 
@@ -283,8 +287,9 @@ contract SoundworkMarketplace is ERC1155, Ownable {
         address priorBidder_ = assetsInAuction[ assetId_].lastBidder;
 
         require( _isNftAsset(assetId_), "not an NFT asset");
-        require( _hasActiveAuction(assetId_), "existing auction deposits");
-        require( _valueIsSufficientForAuction(assetId_), "insufficient eth value");
+        require( _hasActiveAuction(assetId_), "has an existing auction with deposits");
+        require( _valueIsSufficientForAuction(assetId_), "insufficient eth value");        
+        require( !_auctionHasEnded(assetId_), "auction has ended");
 
         assetsInAuction[ assetId_].lastBidder = msg.sender;
         assetsInAuction[ assetId_].lastBiddingPrice = newBiddingPrice_;
@@ -381,6 +386,10 @@ contract SoundworkMarketplace is ERC1155, Ownable {
 
     function _marketplaceIsApprovedByOwner(address owner_) private view returns(bool) {
         return isApprovedForAll(owner_, address(this));
+    }
+
+    function _saleHasEnded(uint assetId_) private view returns(bool) {
+        return block.timestamp <= assetsForSale[ assetId_].endDate;
     }
 
     function _isCurrentNftOwner( address addr_, uint assetId_) private view returns(bool) {
