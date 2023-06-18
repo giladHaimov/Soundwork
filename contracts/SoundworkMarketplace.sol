@@ -240,7 +240,7 @@ contract SoundworkMarketplace is ERC1155, Ownable {
 
         require( _valueIsSufficientForSale(assetId_), "insufficient Eth value");
         require( _marketplaceIsApprovedByOwner(origOwner_), "marketplace not approved for asset");
-        require( !_saleHasEnded(assetId_), "sale had ended");
+        require( !_saleHasEnded(assetId_), "sale has ended");
 
         uint requestedPrice_ = assetsForSale[ assetId_].requestedPrice;
 
@@ -394,7 +394,7 @@ contract SoundworkMarketplace is ERC1155, Ownable {
     }
 
     function _saleHasEnded(uint assetId_) private view returns(bool) {
-        return block.timestamp <= assetsForSale[ assetId_].endDate;
+        return block.timestamp > assetsForSale[ assetId_].endDate;
     }
 
     function _isCurrentNftOwner( address addr_, uint assetId_) private view returns(bool) {

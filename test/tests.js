@@ -26,7 +26,7 @@ contract("SoundworkMarketplace", (accounts_) => {
    const addr1 = accounts_[0];
    let   addr2 = accounts_[1];
    let   addr3 = accounts_[2];
-   let   addr4 = accounts_[3];
+   //let   addr4 = accounts_[3];
 
    const SOUND_ASSET_NAME = "my-sound-asset";
 
@@ -83,13 +83,13 @@ contract("SoundworkMarketplace", (accounts_) => {
      await instance.setApprovalForAll( MARKETPLACE_ADDRESS, true, {from: ASSET_OWNER});
 
      // and purchase:
-     await instance.purchaseAsset(assetInd, { from: addr2, value: emoughPrice});
+     await instance.purchaseAsset(assetInd, { from: addr2, value: PURCHASE_VALUE});
 
   });
 
-  async function verifyCannotPurchaseIfMarketplaceNotApproved(assetInd, emoughPrice) {
+  async function verifyCannotPurchaseIfMarketplaceNotApproved(assetInd, enoughPrice) {
      try { 
-          await instance.purchaseAsset(assetInd, { from: addr2, value: emoughPrice});
+          await instance.purchaseAsset(assetInd, { from: addr2, value: enoughPrice});
           assert.fail( "cannot buy unless marketplace is approved by asset owner");
      } catch(err) {
           // should fail!
@@ -125,11 +125,22 @@ contract("SoundworkMarketplace", (accounts_) => {
 
   async function safe_createSoundAsset(assetOwner) {
      soundAsset.authorAddress = assetOwner;
-     await instance.createSoundAsset( soundAsset, {from: addr1});
-     const assetInd = 1;
+     assert.equal( soundAsset.authorAddress, assetOwner, "soundAsset.authorAddress not set");
+     
+     const CONTRACT_OWNER = addr1;
+     await instance.createSoundAsset( soundAsset, {from: CONTRACT_OWNER});
+     const assetInd = 2;
      let assetRecord = await instance.soundAssets(assetInd);
      assert.equal( assetRecord.name, SOUND_ASSET_NAME);
      console.log(`assetRecord: ${assetRecord.name}`);
+
+     const ctr_1 = await instance.balanceOf( addr1, assetInd);
+     const ctr_2 = await instance.balanceOf( addr2, assetInd);
+     const ctr_3 = await instance.balanceOf( addr3, assetInd);
+     
+     console.log(`==>Addrs  11: ${addr1} , 22: ${addr2}, 33: ${addr3} `);
+     console.log(`==>Counts  11: ${ctr_1} , 22: ${ctr_2}, 33: ${ctr_3} `);
+
      return assetInd;
   }
 
