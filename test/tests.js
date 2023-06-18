@@ -26,7 +26,7 @@ contract("SoundworkMarketplace", (accounts_) => {
    const addr1 = accounts_[0];
    let   addr2 = accounts_[1];
    let   addr3 = accounts_[2];
-   //let   addr4 = accounts_[3];
+   let   addr4 = accounts_[3];
 
    const SOUND_ASSET_NAME = "my-sound-asset";
 
@@ -64,7 +64,8 @@ contract("SoundworkMarketplace", (accounts_) => {
 
   it("offer and purchase a sound asset", async () => { //
      const ASSET_OWNER = addr3;
-     const assetInd = await safe_createSoundAsset(ASSET_OWNER);
+     const assetInd = 2;
+     await safe_createSoundAsset(ASSET_OWNER, assetInd);
           
      await verifyNonOwnerCannotOffetAssetForPurchase(assetInd);
 
@@ -87,6 +88,33 @@ contract("SoundworkMarketplace", (accounts_) => {
 
   }); 
 
+  it("verify auction flow", async () => { //
+     const ASSET_OWNER = addr4;
+     const assetInd = 3;
+     await safe_createSoundAsset(ASSET_OWNER, assetInd);
+          
+     await verifyNonOwnerCannotCreateAuction(assetInd);
+
+     await verifyCannotBidForNonExistingAuction(assetInd);
+
+     // now enter auction:
+     await instance.placeAssetInAuction(assetInd, PURCHASE_PRICE.toString(), 100, 
+                    { from: ASSET_OWNER});
+
+     await verifyCannotBidOnAuctionIfPriceTooLow(assetInd, PURCHASE_PRICE);
+
+     await verifyCannotBidOnAuctionIfMarketplaceNotApproved(assetInd, PURCHASE_VALUE);
+
+     // now approve marketplace for all of owner's asssets:
+     const MARKETPLACE_ADDRESS = instance.address;
+     await instance.setApprovalForAll( MARKETPLACE_ADDRESS, true, {from: ASSET_OWNER});
+
+     // and place bid on auction:
+     await instance.placeBidForAssetInAuction(assetInd, { from: addr2, value: PURCHASE_VALUE});
+
+  }); 
+
+
   //-----------
 
 
@@ -99,10 +127,46 @@ contract("SoundworkMarketplace", (accounts_) => {
      }
   }
 
+  async function verifyCannotBidOnAuctionIfMarketplaceNotApproved(assetInd, enoughPrice) {
+     try { 
+          await instance.placeBidForAssetInAuction( assetInd, { from: addr2, value: enoughPrice});
+          assert.fail( "cannot bid unless marketplace is approved by asset owner");
+     } catch(err) {
+          // should fail!
+     }
+  }
+
+  async function verifyCannotBidOnAuctionIfPriceTooLow(assetInd, tooLowPrice) {
+     try { 
+          await instance.placeBidForAssetInAuction(assetInd, { from: addr2, value: tooLowPrice});
+          assert.fail( "cannot bid if price too low");
+     } catch(err) {
+          // should fail!
+     }
+  }
+
   async function verifyCannotPurchaseIfPriceTooLow(assetInd, tooLowPrice) {
      try { 
           await instance.purchaseAsset(assetInd, { from: addr2, value: tooLowPrice});
           assert.fail( "cannot buy if price too low");
+     } catch(err) {
+          // should fail!
+     }
+  }
+
+  async function verifyNonOwnerCannotCreateAuction(assetInd) {
+     try { 
+          await instance.placeAssetInAuction(assetInd, PURCHASE_PRICE, 100, { from: addr2});
+          assert.fail( "cannot auction asset unless owner");
+     } catch(err) {
+          // should fail!
+     }
+  }
+
+  async function verifyCannotBidForNonExistingAuction(assetInd) {
+     try { 
+          await instance.placeBidForAssetInAuction(assetInd, { from: addr2, value: PURCHASE_VALUE});
+          assert.fail( "cannot bid if no auction");
      } catch(err) {
           // should fail!
      }
@@ -126,13 +190,12 @@ contract("SoundworkMarketplace", (accounts_) => {
      }
   }
 
-  async function safe_createSoundAsset(assetOwner) {
+  async function safe_createSoundAsset(assetOwner, assetInd) {
      soundAsset.authorAddress = assetOwner;
      assert.equal( soundAsset.authorAddress, assetOwner, "soundAsset.authorAddress not set");
      
      const CONTRACT_OWNER = addr1;
      await instance.createSoundAsset( soundAsset, {from: CONTRACT_OWNER});
-     const assetInd = 2;
 
      let assetRecord = await instance.soundAssets(assetInd);
      assert.equal( assetRecord.name, SOUND_ASSET_NAME);
