@@ -44,8 +44,12 @@ contract("SoundworkMarketplace", (accounts_) => {
 
   //======================== test methods ========================
 
+  let MARKETPLACE_ADDRESS;
+
    beforeEach( async function () {
         instance = await Soundwork.deployed(); // deploy a dedicated instance for payment tokens
+
+        MARKETPLACE_ADDRESS = instance.address
    });
 
 
@@ -63,43 +67,53 @@ contract("SoundworkMarketplace", (accounts_) => {
   });
 
   it("offer and purchase a sound asset", async () => { //
-     const ASSET_OWNER = addr3;
+     const ORIG_ASSET_OWNER = addr3;
      const assetInd = 2;
-     await safe_createSoundAsset(ASSET_OWNER, assetInd);
+     await safe_createSoundAsset(ORIG_ASSET_OWNER, assetInd);
           
+     await verifyAssetOwner( assetInd, ORIG_ASSET_OWNER);
+
      await verifyNonOwnerCannotOffetAssetForPurchase(assetInd);
 
      await verifyCannotPurchaseNonOfferedAsset(assetInd);
 
      // now offer asset:
      await instance.offerAssetForSale(assetInd, PURCHASE_PRICE.toString(), 100, 
-                    { from: ASSET_OWNER});
+                    { from: ORIG_ASSET_OWNER});
 
      await verifyCannotPurchaseIfPriceTooLow(assetInd, PURCHASE_PRICE);
 
      await verifyCannotPurchaseIfMarketplaceNotApproved(assetInd, PURCHASE_VALUE);
 
-     // now approve marketplace for all of owner's asssets:
-     const MARKETPLACE_ADDRESS = instance.address;
-     await instance.setApprovalForAll( MARKETPLACE_ADDRESS, true, {from: ASSET_OWNER});
+     // now have owner approve marketplace
+     await approveMarketplaceForAllOwnerAssets( ORIG_ASSET_OWNER)
 
      // and purchase:
-     await instance.purchaseAsset(assetInd, { from: addr2, value: PURCHASE_VALUE});
+     const NEW_OWNER = addr2;
+     await instance.purchaseAsset(assetInd, { from: NEW_OWNER, value: PURCHASE_VALUE});
+
+     // verify ownership change
+     await verifyAssetOwner( assetInd, NEW_OWNER);
+     await verifyNotAssetOwner( assetInd, ORIG_ASSET_OWNER);
 
   }); 
 
   it("verify auction flow", async () => { //
-     const ASSET_OWNER = addr4;
+     const ORIG_ASSET_OWNER = addr4;
      const assetInd = 3;
-     await safe_createSoundAsset(ASSET_OWNER, assetInd);
-          
+     await safe_createSoundAsset(ORIG_ASSET_OWNER, assetInd);          
+     
+     await verifyAssetOwner( assetInd, ORIG_ASSET_OWNER);
+
      await verifyNonOwnerCannotCreateAuction(assetInd);
 
      await verifyCannotBidForNonExistingAuction(assetInd);
 
      // now enter auction:
      await instance.placeAssetInAuction(assetInd, PURCHASE_PRICE.toString(), 100, 
-                    { from: ASSET_OWNER});
+                    { from: ORIG_ASSET_OWNER});
+
+     const auction_ = await instance.assetsInAuction( assetInd);
 
      await verifyCannotBidOnAuctionIfPriceTooLow(assetInd, PURCHASE_PRICE);
 
@@ -107,14 +121,32 @@ contract("SoundworkMarketplace", (accounts_) => {
 
      await verifyCannotCompleteAuctionBeforeTime(assetInd);
 
-     // now approve marketplace for all of owner's asssets:
-     const MARKETPLACE_ADDRESS = instance.address;
-     await instance.setApprovalForAll( MARKETPLACE_ADDRESS, true, {from: ASSET_OWNER});
+     // now have owner approve markeyplace
+     await approveMarketplaceForAllOwnerAssets( ORIG_ASSET_OWNER);
+
+     console.log(`2/auction_ min price: ${auction_.minPrice}`);
+     console.log(`2/auction_ endDate: ${auction_.endDate}`);
 
      // and place bid on auction:
-     await instance.placeBidForAssetInAuction(assetInd, { from: addr2, value: PURCHASE_VALUE});
+     const NEW_OWNER = addr2;
+     await instance.placeBidForAssetInAuction(assetInd, { from: NEW_OWNER, value: PURCHASE_VALUE});
+
+     // verify asset ownership not changed
+     await verifyAssetOwner( assetInd, ORIG_ASSET_OWNER);
 
      await verifyCannotCompleteAuctionBeforeTime(assetInd);
+
+     
+     // finally use a debug gateway to fix completion time so auction can be closed:
+     /* 
+     //await instance.debug_forceSetAuctionCompleteTime(assetInd, { from: addr1});
+
+     await instance.completeAuction(assetInd, { from: addr3});
+
+     await verifyAssetOwner( assetInd, NEW_OWNER);
+     await verifyNotAssetOwner( assetInd, ORIG_ASSET_OWNER);
+     */          
+
   }); 
 
 
@@ -222,6 +254,21 @@ contract("SoundworkMarketplace", (accounts_) => {
 
      return assetInd;
   }
+
+  async function verifyAssetOwner( assetInd, addr_) {
+     const isOwner = await instance.isCurrentNftOwner( addr_, assetInd);
+     assert.isTrue( isOwner, "not owner");
+  }
+
+  async function verifyNotAssetOwner( assetInd, addr_) {
+     const isOwner = await instance.isCurrentNftOwner( addr_, assetInd);
+     assert.isFalse( isOwner, "is owner");
+  }
+
+  async function approveMarketplaceForAllOwnerAssets( owner_) {
+     await instance.setApprovalForAll( MARKETPLACE_ADDRESS, true, {from: owner_});
+  }
+
 
 });
 

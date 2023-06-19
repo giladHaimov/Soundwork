@@ -33,13 +33,13 @@ abstract contract AssetPurchaseProvider is ERC1155 {
 
 
     //-------
-    modifier isCurrentNftOwner(uint assetId_) {
-        require( _isCurrentNftOwner( msg.sender, assetId_), "not current asset owner/1");
+    modifier onlyCurrentNftOwner(uint assetId_) {
+        require( isCurrentNftOwner( msg.sender, assetId_), "not current asset owner/1");
         _;
     }
 
     modifier auctionHasEnded(uint assetId_) {
-        require( _auctionHasEnded( assetId_));
+        require( _auctionHasEnded( assetId_), "auction has not ended");
         _;
     }
 
@@ -51,7 +51,7 @@ abstract contract AssetPurchaseProvider is ERC1155 {
     //============  SALES  ==================
 
     function offerAssetForSale(uint assetId_, uint requstedPrice_,
-        uint durationInSeconds_) isCurrentNftOwner(assetId_) external {
+        uint durationInSeconds_) onlyCurrentNftOwner(assetId_) external {
         // asset may have prior assetsForSale or assetsInAuction records, but NOT an auction in-progress i.e. with existing deposits
         require( !_auctionHasBidders(assetId_), "existing auction deposits");
         require( _isNftAsset(assetId_), "not an NFT asset");
@@ -95,7 +95,7 @@ abstract contract AssetPurchaseProvider is ERC1155 {
     //============  AUCTIONS ==================
 
     function placeAssetInAuction(uint assetId_, uint requstedMinPrice_, uint durationInSeconds_)
-        isCurrentNftOwner(assetId_) external {
+                onlyCurrentNftOwner(assetId_) external {
         // asset may have prior assetsForSale or assetsInAuction records, but NOT an auction in-progress i.e. with existing deposits
         require( !_auctionHasBidders(assetId_), "existing auction deposits");
         require( _isNftAsset(assetId_), "not an NFT asset");
@@ -104,11 +104,11 @@ abstract contract AssetPurchaseProvider is ERC1155 {
         uint endDate_ = block.timestamp + durationInSeconds_;
 
         assetsInAuction[ assetId_] =  AuctionParams({
-        origOwner: msg.sender,
-        lastBidder: address(0),
-        minPrice: requstedMinPrice_,
-        lastBiddingPrice: 0,
-        endDate: endDate_});
+                                            origOwner: msg.sender,
+                                            lastBidder: address(0),
+                                            minPrice: requstedMinPrice_,
+                                            lastBiddingPrice: 0,
+                                            endDate: endDate_});
 
         emit AssetPlacedInAuction( assetId_, msg.sender, requstedMinPrice_, endDate_);
     }
@@ -122,8 +122,8 @@ abstract contract AssetPurchaseProvider is ERC1155 {
         uint priorBiddingPrice_ = assetsInAuction[ assetId_].lastBiddingPrice;
         address priorBidder_ = assetsInAuction[ assetId_].lastBidder;
 
+        require( _hasActiveAuction(assetId_), "2/asset not placed in auction");
         require( _isNftAsset(assetId_), "not an NFT asset");
-        require( _hasActiveAuction(assetId_), "has an existing auction with deposits");
         require( _valueIsSufficientForAuction(assetId_), "insufficient eth value");
         require( !_auctionHasEnded(assetId_), "auction has ended");
 
@@ -133,6 +133,9 @@ abstract contract AssetPurchaseProvider is ERC1155 {
         if (priorBidder_ != address(0)) {
             _transferEthFromMarketplace( priorBiddingPrice_, priorBidder_);
         }
+
+        // cannot have a sale offer once an auction bid has been made
+        delete assetsForSale[ assetId_];
 
         emit BidPlacedForAssetInAuction( assetId_, msg.sender, newBiddingPrice_);
     }
@@ -148,9 +151,13 @@ abstract contract AssetPurchaseProvider is ERC1155 {
         uint lastBiddingPrice_ = assetsInAuction[ assetId_].lastBiddingPrice;
         address assetOwner_ = assetsInAuction[ assetId_].origOwner;
 
-        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/2");
+        require( isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/2");
 
+        // action is now completed
         delete assetsInAuction[ assetId_];
+
+        // asset ownrship changed: remove old sale offer if exists
+        delete assetsForSale[ assetId_];
 
         // transfer asset to last bidder;
         _safeTransferFrom( assetOwner_, lastBidder_, assetId_, 1, "");
@@ -161,11 +168,16 @@ abstract contract AssetPurchaseProvider is ERC1155 {
         emit AssetInAuctionHasBeenCompleted( assetId_, assetOwner_, lastBidder_, lastBiddingPrice_);
     }
 
+    // zzzz func below must be commented out!
+    // function debug_forceSetAuctionCompleteTime(uint assetId_) external {
+    //     assetsForSale[ assetId_].endDate = 1;
+    // }
+
 
     //===============================
 
 
-    function _isCurrentNftOwner( address addr_, uint assetId_) virtual internal view returns(bool);
+    function isCurrentNftOwner( address addr_, uint assetId_) virtual public view returns(bool);
 
     function _valueIsSufficientForAuction( uint assetId_) private view returns(bool) {
         uint minPrice_ = assetsInAuction[ assetId_].minPrice;
@@ -185,7 +197,7 @@ abstract contract AssetPurchaseProvider is ERC1155 {
     }
 
     function _assetOwnerNotChangedSinceOffer( uint assetId_, address origOwner_) private view returns(bool) {
-        return _isCurrentNftOwner( origOwner_, assetId_);
+        return isCurrentNftOwner( origOwner_, assetId_);
     }
 
     function _valueIsSufficientForSale(uint assetId_) private view returns(bool) {
@@ -214,8 +226,8 @@ abstract contract AssetPurchaseProvider is ERC1155 {
     }
 
     function _hasActiveAuction( uint assetId_) private view returns(bool) {
-        return assetsInAuction[ assetId_].minPrice > 0 &&
-        block.timestamp <= assetsInAuction[ assetId_].endDate;
+        return assetsInAuction[ assetId_].minPrice > 0
+                && block.timestamp <= assetsInAuction[ assetId_].endDate;
     }
 
 }

@@ -70,7 +70,7 @@ contract SoundworkMarketplace is AssetPurchaseProvider, Ownable {
 
         soundAssets[ assetId_] = asset;
 
-        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/4");
+        require( isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/4");
 
         emit SoundAssetCreated(assetId_, assetOwner_);
     }
@@ -82,7 +82,7 @@ contract SoundworkMarketplace is AssetPurchaseProvider, Ownable {
 
         elementAssets[ assetId_] = asset;
 
-        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/6");
+        require( isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/6");
 
         emit ElementAssetCreated(assetId_, assetOwner_);
     }
@@ -94,7 +94,7 @@ contract SoundworkMarketplace is AssetPurchaseProvider, Ownable {
 
         trackAssets[ assetId_] = asset;
 
-        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/7");
+        require( isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/7");
 
         emit TrackAssetCreated(assetId_, assetOwner_);
     }
@@ -118,14 +118,14 @@ contract SoundworkMarketplace is AssetPurchaseProvider, Ownable {
         uint assetId_ = ++nextTokenId;
         _mint( assetOwner_, assetId_, 1, "");
         
-        require( _isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/3");
+        require( isCurrentNftOwner( assetOwner_, assetId_), "not current asset owner/3");
 
         emit NewAssetCreated(assetId_, type_, assetOwner_);
         
         return assetId_;
     }
 
-    function  _isCurrentNftOwner( address addr_, uint assetId_) override internal view returns(bool) {
+    function  isCurrentNftOwner( address addr_, uint assetId_) public override view returns(bool) {
         uint numNfts = balanceOf( addr_, assetId_);
         require( numNfts <= 1, "nft must be unique.");
         return numNfts == 1;
