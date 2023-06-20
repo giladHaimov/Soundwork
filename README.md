@@ -36,7 +36,8 @@ To use the asset marketplace, you need to deploy the smart contract to an Ethere
 
 ## Mint Assets: As the contract owner, you can create and mint different types of assets by calling the respective functions (createSoundAsset, createPackAsset, createElementAsset, createTrackAsset) in the AssetMinter contract. Provide the required asset details as function parameters.
 
-## Offer Assets for Sale: Once an asset is minted, you can offer it for sale by calling the offerAssetForSale function in the AssetPurchaseProvider contract. Specify the asset ID, requested price, and duration for which the asset should be available for sale.
+### Offer Assets for Sale:
+Once an asset is minted, you can offer it for sale by calling the offerAssetForSale function in the AssetPurchaseProvider contract. Specify the asset ID, requested price, and duration for which the asset should be available for sale.
 
 ## Purchase Assets: Interested buyers can purchase assets that are offered for sale by calling the purchaseAsset function in the AssetPurchaseProvider contract. Provide the asset ID and send the requested price as ETH along with the transaction.
 
