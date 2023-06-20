@@ -37,6 +37,6 @@ contract SoundworkMarketplace is /*ERC1155*/ AssetMinter {
     // Function to transfer ERC20 marketplace tokens to a specified address
     function transferErc20MarketplaceTokens(address to_, uint numTokens_) external onlyOwner { //@PUBFUNC
         // Safely transfer ERC20 marketplace tokens from the contract address to the specified address
-        _safeTransferFrom(address(this), to_, ERC20_TOKENID, numTokens_, "");
+        safeTransferFrom(address(this), to_, ERC20_TOKENID, numTokens_, "");
     }
 }

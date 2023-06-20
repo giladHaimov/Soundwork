@@ -8,7 +8,7 @@ import "./structs/AuctionParams.sol";
 // Abstract contract that serves as a provider for asset purchases
 abstract contract AssetPurchaseProvider is ERC1155 {
 
-    uint public constant ERC20_TOKENID = type(uint256).max/2;
+    uint internal constant ERC20_TOKENID = type(uint256).max/2;
 
     mapping(uint => SaleParams) public assetsForSale; // Mapping to track assets available for sale
     mapping(uint => AuctionParams) public assetsInAuction; // Mapping to track assets in auction
@@ -160,7 +160,7 @@ abstract contract AssetPurchaseProvider is ERC1155 {
         delete assetsInAuction[assetId_];
         delete assetsForSale[assetId_];
 
-        _safeTransferFrom(assetOwner_, lastBidder_, assetId_, 1, "");
+        safeTransferFrom(assetOwner_, lastBidder_, assetId_, 1, "");
 
         _transferEthFromMarketplace(lastBiddingPrice_, assetOwner_);
 
