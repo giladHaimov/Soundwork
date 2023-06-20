@@ -34,14 +34,17 @@ The smart contract code is organized into multiple files:
 ## Usage
 To use the asset marketplace, you need to deploy the smart contract to an Ethereum network or interact with an existing deployment.
 
-## Mint Assets: As the contract owner, you can create and mint different types of assets by calling the respective functions (createSoundAsset, createPackAsset, createElementAsset, createTrackAsset) in the AssetMinter contract. Provide the required asset details as function parameters.
+### Mint Assets:
+As the contract owner, you can create and mint different types of assets by calling the respective functions (createSoundAsset, createPackAsset, createElementAsset, createTrackAsset) in the AssetMinter contract. Provide the required asset details as function parameters.
 
 ### Offer Assets for Sale:
 Once an asset is minted, you can offer it for sale by calling the offerAssetForSale function in the AssetPurchaseProvider contract. Specify the asset ID, requested price, and duration for which the asset should be available for sale.
 
-## Purchase Assets: Interested buyers can purchase assets that are offered for sale by calling the purchaseAsset function in the AssetPurchaseProvider contract. Provide the asset ID and send the requested price as ETH along with the transaction.
+### Purchase Assets:
+Interested buyers can purchase assets that are offered for sale by calling the purchaseAsset function in the AssetPurchaseProvider contract. Provide the asset ID and send the requested price as ETH along with the transaction.
 
-## Auction Assets: To auction an asset, call the placeAssetInAuction function in the AssetPurchaseProvider contract. Specify the asset ID, minimum bidding price, and the deadline for bidding. Bidders can place their bids using the placeBidForAssetInAuction function.
+### Auction Assets:
+To auction an asset, call the placeAssetInAuction function in the AssetPurchaseProvider contract. Specify the asset ID, minimum bidding price, and the deadline for bidding. Bidders can place their bids using the placeBidForAssetInAuction function.
 
 ## Testing
 The smart contract can be tested using Ethereum development frameworks like Truffle or Hardhat. Write test cases to verify the functionality of each contract and ensure that the expected behavior is met.
