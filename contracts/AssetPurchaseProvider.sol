@@ -132,11 +132,11 @@ abstract contract AssetPurchaseProvider is ERC1155 {
         assetsInAuction[assetId_].lastBidder = msg.sender;
         assetsInAuction[assetId_].lastBiddingPrice = newBiddingPrice_;
 
+        delete assetsForSale[assetId_];
+
         if (priorBidder_ != address(0)) {
             _transferEthFromMarketplace(priorBiddingPrice_, priorBidder_);
         }
-
-        delete assetsForSale[assetId_];
 
         emit BidPlacedForAssetInAuction(assetId_, msg.sender, newBiddingPrice_);
     }
@@ -274,6 +274,7 @@ abstract contract AssetPurchaseProvider is ERC1155 {
      * @param recipient_ The recipient of the ETH.
      */
     function _transferEthFromMarketplace(uint amount_, address recipient_) private {
-        payable(recipient_).transfer(amount_);
+        (bool ok,) = payable(recipient_).call{ value: amount_ }("");
+        require(ok, "ether transfer failed");
     }
 }

@@ -5,6 +5,9 @@ import "./AssetMinter.sol";
 
 contract SoundworkMarketplace is /*ERC1155*/ AssetMinter {
     // Immutable variable to store the ERC20 token supply
+
+    uint constant public MAX_MARKETPLACE_CUT_PROMILS = 40; // == 4%
+
     uint public immutable erc20Supply;
 
     // Event emitted when the marketplace cut is changed
@@ -24,6 +27,7 @@ contract SoundworkMarketplace is /*ERC1155*/ AssetMinter {
 
     // Function to set the marketplace cut percentage
     function setMarketplaceCutPromils(uint marketplaceCutPromils_) external onlyOwner { //@PUBFUNC
+        require( marketplaceCutPromils_ <= MAX_MARKETPLACE_CUT_PROMILS, "cut exceeds max");
         // Store the old value of marketplaceCutPromils
         uint oldVal = marketplaceCutPromils;
 
