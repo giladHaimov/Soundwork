@@ -52,7 +52,7 @@ The smart contract can be tested using Ethereum development frameworks like Truf
 ## License
 This project is licensed under the MIT License. See the LICENSE file for more details.
 
-
+<!--
 ```typescript
 import { sequence } from '0xsequence'
 
@@ -62,7 +62,7 @@ await wallet.login()
 const provider = wallet.getProvider()
 // .. connect provider to your dapp
 ```
-
+ -->
 
 
 
